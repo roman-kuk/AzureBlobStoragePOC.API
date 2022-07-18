@@ -15,9 +15,10 @@ namespace AzureBlobStorage.Infrastructure
         {
             services.AddTransient(_ =>
             {
-                var accountName = Environment.GetEnvironmentVariable("AZURE_STORAGE_URL");
+                var storageUrl = Environment.GetEnvironmentVariable("AZURE_STORAGE_URL");
                 var accessKey = Environment.GetEnvironmentVariable("AZURE_STORAGE_ACCESS_KEY");
-                var client = new BlobServiceClient(new Uri($"https://{accountName}.blob.core.windows.net"),
+                var accountName = Environment.GetEnvironmentVariable("AZURE_ACCOUNT_NAME");
+                var client = new BlobServiceClient(new Uri(storageUrl),
                     new StorageSharedKeyCredential(accountName, accessKey));
                 return client;
             });
