@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft.All Rights Reserved.Licensed under the MIT license.See License.txt in the project root for license information.
 
+using Azure.Storage;
 using Azure.Storage.Blobs;
 using AzureBlobStorage.Infrastructure.Services;
 using AzureBlobStorage.Infrastructure.Services.Interfaces;
@@ -14,8 +15,11 @@ namespace AzureBlobStorage.Infrastructure
         {
             services.AddTransient(_ =>
             {
-                var storageUrl = Environment.GetEnvironmentVariable("AZURE_STORAGE_URL");
-                return new BlobServiceClient(new Uri(storageUrl ?? string.Empty));
+                var accountName = Environment.GetEnvironmentVariable("AZURE_STORAGE_URL");
+                var accessKey = Environment.GetEnvironmentVariable("AZURE_STORAGE_ACCESS_KEY");
+                var client = new BlobServiceClient(new Uri($"https://{accountName}.blob.core.windows.net"),
+                    new StorageSharedKeyCredential(accountName, accessKey));
+                return client;
             });
 
             services.AddTransient<IBlobStorageService, BlobStorageService>();

@@ -5,6 +5,8 @@ VisualStudioVersion = 17.2.32516.85
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureBlobStoragePOC.API", "AzureBlobStoragePOC.API\AzureBlobStoragePOC.API.csproj", "{5CB037B9-EA0B-4ADF-8354-71B34DC85C26}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureBlobStorage.Infrastructure", "AzureBlobStorage.Infrastructure\AzureBlobStorage.Infrastructure.csproj", "{CC5271BE-469F-45E6-B9B5-AF9F90FE8FAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{5CB037B9-EA0B-4ADF-8354-71B34DC85C26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CB037B9-EA0B-4ADF-8354-71B34DC85C26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5CB037B9-EA0B-4ADF-8354-71B34DC85C26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC5271BE-469F-45E6-B9B5-AF9F90FE8FAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC5271BE-469F-45E6-B9B5-AF9F90FE8FAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC5271BE-469F-45E6-B9B5-AF9F90FE8FAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC5271BE-469F-45E6-B9B5-AF9F90FE8FAB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

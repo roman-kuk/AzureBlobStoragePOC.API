@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft.All Rights Reserved.Licensed under the MIT license.See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
@@ -21,7 +23,7 @@ namespace AzureBlobStorage.Infrastructure.Services
 			_blobServiceClient = blobServiceClient;
 		}
 
-		public virtual async Task<UploadedBlobResponseDto> UploadSingleBlob(
+		public virtual async Task<string> UploadSingleBlob(
 			Stream fileStream,
 			string containerName,
 			string blobName,
@@ -33,22 +35,10 @@ namespace AzureBlobStorage.Infrastructure.Services
 
 			await container.GetBlobClient(blobName).UploadAsync(fileStream, true, cancellationToken);
 
-			return new UploadedBlobResponseDto { BlobUrl = container.GetBlobClient(blobName).Uri.ToString() };
-		}
+            return container.GetBlobClient(blobName).Name;
+        }
 
-		public virtual async Task<BlobProperties> GetBlobInfo(
-			string containerName,
-			string blobName,
-			CancellationToken cancellationToken
-		)
-		{
-			var container = _blobServiceClient.GetBlobContainerClient(containerName);
-			await container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken);
-
-			return await container.GetBlobClient(blobName).GetPropertiesAsync(cancellationToken: cancellationToken);
-		}
-
-		public virtual async Task<Uri> GenerateSasToken(
+        public virtual Task<Uri> GenerateSasToken(
 			TimeSpan accessDuration,
 			string containerName,
 			string blobName,
@@ -59,13 +49,7 @@ namespace AzureBlobStorage.Infrastructure.Services
 			var blobContainerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 			var blobClient = blobContainerClient.GetBlobClient(blobName); // blob name
 
-			// Get a user delegation key for the Blob service that's valid for 2 hours.
-			var userDelegationKey = await _blobServiceClient.GetUserDelegationKeyAsync(
-				DateTimeOffset.UtcNow.AddHours(-1),
-				DateTimeOffset.UtcNow.AddHours(2),
-				cancellationToken);
-
-			var sasBuilder = new BlobSasBuilder()
+            var sasBuilder = new BlobSasBuilder()
 			{
 				BlobContainerName = blobClient.BlobContainerName,
 				BlobName = blobClient.Name,
@@ -75,13 +59,11 @@ namespace AzureBlobStorage.Infrastructure.Services
 			};
 
 			sasBuilder.SetPermissions(BlobSasPermissions.Read); // read permissions
-																// Add the SAS token to the container URI.
-			var blobUriBuilder = new BlobUriBuilder(blobClient.Uri)
-			{
-				Sas = sasBuilder.ToSasQueryParameters(userDelegationKey, _blobServiceClient.AccountName)
-			};
+            // Add the SAS token to the container URI.
 
-			return blobUriBuilder.ToUri();
+            var sasUri = blobClient.GenerateSasUri(sasBuilder);
+
+			return Task.FromResult(sasUri);
 		}
 
 		public virtual async Task DeleteSingleBlob(
@@ -95,16 +77,35 @@ namespace AzureBlobStorage.Infrastructure.Services
 			await container.DeleteBlobIfExistsAsync(blobName, cancellationToken: cancellationToken);
 		}
 
-		public virtual Task<Stream> GetBlobStream(
-			string containerName,
-			string blobName,
-			CancellationToken cancellationToken
-		)
-		{
-			var container = _blobServiceClient.GetBlobContainerClient(containerName);
+        public virtual Task<IList<BlobOptionsDto>> GetBlobs(
+            string containerName,
+            CancellationToken cancellationToken
+        )
+        {
+            var container = _blobServiceClient.GetBlobContainerClient(containerName);
 
-			var client = container.GetBlobClient(blobName);
-			return client.OpenReadAsync(cancellationToken: cancellationToken);
-		}
-    }
+            var blobs = AggregateBlobItems(container, cancellationToken).Select(x => new BlobOptionsDto()
+            {
+                FileName = x.Name
+            }).ToList();
+
+            return Task.FromResult<IList<BlobOptionsDto>>(blobs);
+        }
+
+        private static IEnumerable<BlobItem> AggregateBlobItems(BlobContainerClient container, CancellationToken cancellationToken)
+        {
+            var result = new List<BlobItem>();
+
+            using var enumerator = container.GetBlobs(BlobTraits.None, BlobStates.None, null, cancellationToken)
+                .AsPages()
+                .GetEnumerator();
+
+            do
+            {
+                if (enumerator.Current != null) result.AddRange(enumerator.Current.Values);
+            } while (enumerator.MoveNext());
+
+            return result;
+        }
+	}
 }
